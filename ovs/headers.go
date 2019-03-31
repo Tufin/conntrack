@@ -150,7 +150,11 @@ type Conn struct {
 	Err error
 }
 
+<<<<<<< HEAD
 type OvsFlowKeys map[OvsKeyAttrType]OvsFlowKey
+=======
+type OvsFlowKeys []OvsFlowKey
+>>>>>>> origin/master
 
 type OvsFlowKey interface {
 }
