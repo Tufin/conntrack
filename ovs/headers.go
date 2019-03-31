@@ -1,7 +1,9 @@
 package ovs
 
 import (
+	"fmt"
 	"net"
+	"unsafe"
 )
 
 type OvsKeyAttrType int
@@ -195,6 +197,16 @@ type OvsAttrIpv4FlowKey struct {
 	OvsFlowKey
 }
 
+func (fk OvsAttrIpv4FlowKey) String() string {
+	return fmt.Sprintf("Src: %s, Dst: %s, Proto %d, Tos %d, Ttl %d, Frag %d",
+		ipv4ToString((*[4]byte)(unsafe.Pointer(&fk.Src))[:]),
+		ipv4ToString((*[4]byte)(unsafe.Pointer(&fk.Dst))[:]),
+		fk.Proto,
+		fk.Tos,
+		fk.Ttl,
+		fk.Frag)
+}
+
 type OvsAttrIpv6FlowKey struct {
 	Src    [4]uint32
 	Dst    [4]uint32
@@ -342,6 +354,10 @@ type OvsTunnelAttrs struct {
 	TpDst    uint16
 	IPv6Src  net.IP
 	IPv6Dst  net.IP
+}
+
+func (ta OvsTunnelAttrs) String() string {
+	return fmt.Sprintf("Src: %s, Dst %s, ta: %#v", ipv4ToString((*[4]byte)(unsafe.Pointer(&ta.Ipv4Src))[:]), ipv4ToString((*[4]byte)(unsafe.Pointer(&ta.Ipv4Dst))[:]), ta)
 }
 
 type OvsTunnelAttrsPresence struct {

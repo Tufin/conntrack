@@ -1630,9 +1630,9 @@ func parseFlowKeys(flowKeysPayload []byte) (OvsFlowKeys, error) {
 			ipv4fk.Src = *(*uint32)(unsafe.Pointer(&attrKey.Msg[0]))
 			ipv4fk.Dst = *(*uint32)(unsafe.Pointer(&attrKey.Msg[4]))
 			ipv4fk.Proto = *(*byte)(unsafe.Pointer(&attrKey.Msg[8]))
-			ipv4fk.Tos = *(*byte)(unsafe.Pointer(&attrKey.Msg[8]))
-			ipv4fk.Ttl = *(*byte)(unsafe.Pointer(&attrKey.Msg[8]))
-			ipv4fk.Frag = *(*byte)(unsafe.Pointer(&attrKey.Msg[8]))
+			ipv4fk.Tos = *(*byte)(unsafe.Pointer(&attrKey.Msg[9]))
+			ipv4fk.Ttl = *(*byte)(unsafe.Pointer(&attrKey.Msg[10]))
+			ipv4fk.Frag = *(*byte)(unsafe.Pointer(&attrKey.Msg[11]))
 			res[OvsAttrIpv4] = ipv4fk
 
 		case OvsAttrIpv6:
