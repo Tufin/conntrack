@@ -320,7 +320,8 @@ type OvsFlowInfo struct {
 }
 
 type OvsFlowSpec struct {
-	OvsFlowKeys
+	Keys OvsFlowKeys
+	Masks OvsFlowKeys
 	Actions []OvsAction
 }
 

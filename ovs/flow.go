@@ -1583,7 +1583,9 @@ func parsePayload(payload []byte) (*OvsFlowInfo, error) {
 		case OVS_FLOW_ATTR_ACTIONS:
 			flow.Actions, _ = parseActions(attr.Msg)
 		case OVS_FLOW_ATTR_KEY:
-			flow.OvsFlowKeys, _ = parseFlowKeys(attr.Msg)
+			flow.Keys, _ = parseFlowKeys(attr.Msg)
+		case OVS_FLOW_ATTR_MASK:
+			flow.Masks, _ = parseFlowKeys(attr.Msg)
 			//case OVS_FLOW_ATTR_UFID:
 			//	for _, b := range attr.Msg {
 			//		fmt.Print(fmt.Sprintf("%02x ", b))
