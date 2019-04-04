@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/tufin/conntrack/ovs"
+	"github.com/typetypetype/conntrack/ovs"
 )
 
 func main() {

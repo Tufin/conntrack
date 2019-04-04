@@ -320,13 +320,15 @@ type OvsFlowInfo struct {
 }
 
 type OvsFlowSpec struct {
-	Keys OvsFlowKeys
-	Masks OvsFlowKeys
-	Actions []OvsAction
+	Keys    OvsFlowKeys
+	Masks   OvsFlowKeys
+	Actions OvsActions
 }
 
 type OvsAction interface {
 }
+
+type OvsActions map[int]OvsAction
 
 // ovs_ct_attr include/linux/openvswitch.h
 type OvsCtAction struct {
