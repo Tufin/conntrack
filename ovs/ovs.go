@@ -6,9 +6,9 @@ import (
 	"strconv"
 )
 
-func FollowOvsFlows(bufferSize int, flags uint32) (<-chan *OvsFlowInfo, func(), error) {
+func FollowOvsFlows() (<-chan *OvsFlowInfo, func(), error) {
 
-	dpif, err := NewDpifGroups(0)
+	dpif, err := NewDpifOvs(true)
 
 	if err != nil {
 		fmt.Println(err)
