@@ -136,7 +136,7 @@ func newDpifType(netlinkType int) (*Dpif, error) {
 	return dpif, nil
 }
 
-// Open a Dpif with a new socket, but reuing the family info
+// Open a Dpif with a new socket, but reusing the family info
 func (dpif *Dpif) Reopen() (*Dpif, error) {
 	sock, err := OpenNetlinkSocket(dpif.sock.sockType)
 	if err != nil {
