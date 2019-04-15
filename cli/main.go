@@ -32,7 +32,7 @@ func main() {
 	//	}
 	//}
 
-	res, stopFunc, err := ovs.FollowOvsFlows(0, 0)
+	res, stopFunc, err := ovs.FollowOvsFlows()
 
 	if err != nil {
 		panic(err)

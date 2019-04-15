@@ -2,6 +2,7 @@ package ovs
 
 import (
 	"fmt"
+	"sync"
 	"syscall"
 	"unsafe"
 )
@@ -22,7 +23,8 @@ var familyNames = [FAMILY_COUNT]string{
 }
 
 type Dpif struct {
-	sock     *NetlinkSocket
+	sock *NetlinkSocket
+
 	families [FAMILY_COUNT]GenlFamily
 }
 
@@ -50,7 +52,7 @@ func lookupFamily(sock *NetlinkSocket, name string) (GenlFamily, error) {
 	}
 
 	if err == NetlinkError(syscall.ENOENT) {
-		loadOpenvswitchModule()
+		triedLoadOpenvswitchModule.Do(loadOpenvswitchModule)
 
 		// The module might be loaded now, so try again
 		family, err = sock.LookupGenlFamily(name)
@@ -66,21 +68,17 @@ func lookupFamily(sock *NetlinkSocket, name string) (GenlFamily, error) {
 	return GenlFamily{}, err
 }
 
-var triedLoadOpenvswitchModule bool
+var triedLoadOpenvswitchModule sync.Once
 
 // This tries to provoke the kernel into loading the openvswitch
 // module.  Yes, netdev ioctls can be used to load arbitrary modules,
 // if you have CAP_SYS_MODULE.
 func loadOpenvswitchModule() {
-	if triedLoadOpenvswitchModule {
-		return
-	}
 
 	// netdev ioctls don't seem to work on netlink sockets, so we
 	// need a new socket for this purpose.
 	s, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, 0)
 	if err != nil {
-		triedLoadOpenvswitchModule = true
 		return
 	}
 
@@ -90,15 +88,37 @@ func loadOpenvswitchModule() {
 	copy(req.name[:], []byte("openvswitch"))
 	syscall.Syscall(syscall.SYS_IOCTL, uintptr(s),
 		syscall.SIOCGIFINDEX, uintptr(unsafe.Pointer(&req)))
-	triedLoadOpenvswitchModule = true
 }
 
 func NewDpif() (*Dpif, error) {
-	return NewDpifGroups(0)
+	return newDpifType(syscall.NETLINK_NETFILTER)
 }
 
-func NewDpifGroups(groups uint32) (*Dpif, error) {
-	sock, err := OpenNetlinkSocketGroups(syscall.NETLINK_GENERIC, groups)
+func NewDpifOvs(follow bool) (*Dpif, error) {
+	dpif, err := newDpifType(syscall.NETLINK_GENERIC)
+	if err != nil {
+		return nil, err
+	}
+
+	group, err := dpif.getMCGroup(FLOW, "ovs_flow")
+
+	if err != nil {
+		dpif.Close()
+		return nil, err
+	}
+
+	if follow {
+		if err := syscall.SetsockoptInt(dpif.sock.fd, SOL_NETLINK, syscall.NETLINK_ADD_MEMBERSHIP, int(group)); err != nil {
+			dpif.Close()
+			return nil, err
+		}
+	}
+
+	return dpif, nil
+}
+
+func newDpifType(netlinkType int) (*Dpif, error) {
+	sock, err := OpenNetlinkSocket(netlinkType)
 	if err != nil {
 		return nil, err
 	}
@@ -113,34 +133,17 @@ func NewDpifGroups(groups uint32) (*Dpif, error) {
 		}
 	}
 
-	group, err := dpif.getMCGroup(FLOW, "ovs_flow")
-
-	if err != nil {
-		sock.Close()
-		return nil, err
-	}
-
-	if err := syscall.SetsockoptInt(sock.fd, SOL_NETLINK, syscall.NETLINK_ADD_MEMBERSHIP, int(group)); err != nil {
-		sock.Close()
-		return nil, err
-	}
-
 	return dpif, nil
 }
 
 // Open a Dpif with a new socket, but reuing the family info
-func (dpif *Dpif) ReopenGroups(groups uint32) (*Dpif, error) {
-	sock, err := OpenNetlinkSocketGroups(syscall.NETLINK_GENERIC, groups)
+func (dpif *Dpif) Reopen() (*Dpif, error) {
+	sock, err := OpenNetlinkSocket(dpif.sock.sockType)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Dpif{sock: sock, families: dpif.families}, nil
-}
-
-// Open a Dpif with a new socket, but reuing the family info
-func (dpif *Dpif) Reopen() (*Dpif, error) {
-	return dpif.ReopenGroups(0)
 }
 
 func (dpif *Dpif) getMCGroup(family int, name string) (uint32, error) {
